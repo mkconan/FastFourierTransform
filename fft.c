@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define PI 3.14159265358979323846264338327950288
+
 // 複素数を表す構造体
 typedef struct {
     double real;
@@ -31,6 +33,15 @@ Complex complex_sub(Complex a, Complex b) {
     return result;
 }
 
+// ビット反転順のインデックス計算
+unsigned int reverse_bits(unsigned int n, unsigned int num_bits) {
+    unsigned int reversed = 0;
+    for (unsigned int i = 0; i < num_bits; ++i) {
+        reversed |= ((n >> i) & 1) << (num_bits - 1 - i);
+    }
+    return reversed;
+}
+
 // 高速フーリエ変換（FFT）関数
 void fft(Complex *x, int n) {
     if (n <= 1) return;
@@ -55,6 +66,38 @@ void fft(Complex *x, int n) {
         x[k] = complex_add(even[k], t1);
         x[k + n / 2] = complex_sub(even[k], t1);
     }
+}
+
+void fft_butterfly(Complex* data, unsigned int n) {
+    unsigned int num_bits = (unsigned int)log2(n);
+
+    // データのビット反転順に並べ替え
+    for (unsigned int i = 0; i < n; ++i) {
+        unsigned int j = reverse_bits(i, num_bits);
+        if (i < j) {
+            Complex temp = data[i];
+            data[i] = data[j];
+            data[j] = temp;
+        }
+    }
+
+    // FFTの計算
+    for (unsigned int s = 1; s <= num_bits; ++s) {
+        unsigned int m = 1 << s;
+        double angle = -2.0 * PI / m;
+        Complex wm = {cos(angle), sin(angle)};
+        for (unsigned int k = 0; k < n; k += m) {
+            Complex w = {1.0, 0.0};
+            for (unsigned int j = 0; j < m / 2; ++j) {
+                Complex t = complex_mul(w, data[k + j + m / 2]);
+                Complex u = data[k + j];
+                data[k + j] = complex_add(u, t);
+                data[k + j + m / 2] = complex_sub(u, t);
+                w = complex_mul(w, wm);
+            }
+        }
+    }
+    return;
 }
 
 // 2周期成分の確認および直流/交流の判定
@@ -85,25 +128,34 @@ void analyze_fft_result(Complex *x, int n) {
 
 int main() {
     // 入力データ（16個の要素）
-    Complex x[16];
     double input[] = {0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0};
     // double input[] = {1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1};
+    Complex x1[16];
     for (int i = 0; i < 16; i++) {
-        x[i].real = input[i];
-        x[i].imag = 0.0;
+        x1[i].real = input[i];
+        x1[i].imag = 0.0;
+    }
+    Complex x2[16];
+    for (int i = 0; i < 16; i++) {
+        x2[i].real = input[i];
+        x2[i].imag = 0.0;
     }
 
     // FFTの実行
-    fft(x, 16);
+    fft(x1, 16);
 
     // 結果の表示
     printf("FFT Result:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("(%2.2f, %2.2f)\n", x[i].real, x[i].imag);
-    }
 
     // 直流成分と交流成分の判定
-    analyze_fft_result(x, 16);
+    // analyze_fft_result(x1, 16);
+
+    fft_butterfly(x2, 16);
+
+    printf("FFT-butterfly Result:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("(%2.2f, %2.2f), (%2.2f, %2.2f)\n", x1[i].real, x1[i].imag, x2[i].real, x2[i].imag);
+    }
 
     return 0;
 }
