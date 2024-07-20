@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 #define PI 3.14159265358979323846264338327950288
 
@@ -40,6 +41,21 @@ unsigned int reverse_bits(unsigned int n, unsigned int num_bits) {
         reversed |= ((n >> i) & 1) << (num_bits - 1 - i);
     }
     return reversed;
+}
+
+// 離散フーリエ変換（DFT）の実装
+void dft(const Complex* input, Complex* output, int N) {
+    for (int k = 0; k < N; ++k) {
+        output[k].real = 0;
+        output[k].imag = 0;
+        for (int n = 0; n < N; ++n) {
+            double angle = 2 * PI * k * n / N;
+            double real_part = input[n].real * cos(angle) + input[n].imag * sin(angle);
+            double imag_part = -input[n].real * sin(angle) + input[n].imag * cos(angle);
+            output[k].real += real_part;
+            output[k].imag += imag_part;
+        }
+    }
 }
 
 // 高速フーリエ変換（FFT）関数
@@ -130,6 +146,7 @@ int main() {
     // 入力データ（16個の要素）
     double input[] = {0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0};
     // double input[] = {1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1};
+    Complex output[16] = {0};
     Complex x1[16];
     for (int i = 0; i < 16; i++) {
         x1[i].real = input[i];
@@ -140,22 +157,51 @@ int main() {
         x2[i].real = input[i];
         x2[i].imag = 0.0;
     }
+    Complex x3[16];
+    for (int i = 0; i < 16; i++) {
+        x3[i].real = input[i];
+        x3[i].imag = 0.0;
+    }
+
+    clock_t start_time, end_time;
+
+    // バタフライFFTの実行
+    long int butterfly_fft_time = 0;
+    for (int i = 0; i < 100; i++){
+        start_time = clock();
+        fft_butterfly(x2, 16);
+        end_time = clock();
+        butterfly_fft_time += (end_time - start_time);
+    }
+    printf("FFT-butterfly time: %ld\n", butterfly_fft_time);
 
     // FFTの実行
-    fft(x1, 16);
+    long int fft_time = 0;
+    for (int i = 0; i < 100; i++){
+        start_time = clock();
+        fft(x1, 16);
+        end_time = clock();
+        fft_time += (end_time - start_time);
+    }
+    printf("FFT time: %ld\n", fft_time);
 
-    // 結果の表示
-    printf("FFT Result:\n");
+    // DFTの実行
+    long int dft_time = 0;
+    for (int i = 0; i < 100; i++){
+        start_time = clock();
+        dft(x3, output, 16);
+        end_time = clock();
+        dft_time += (end_time - start_time);
+    }
+    printf("DFT time: %ld\n", dft_time);
 
     // 直流成分と交流成分の判定
     // analyze_fft_result(x1, 16);
 
-    fft_butterfly(x2, 16);
-
-    printf("FFT-butterfly Result:\n");
+    /* printf("FT Result:\n");
     for (int i = 0; i < 16; i++) {
-        printf("(%2.2f, %2.2f), (%2.2f, %2.2f)\n", x1[i].real, x1[i].imag, x2[i].real, x2[i].imag);
-    }
+        printf("(%2.2f, %2.2f), (%2.2f, %2.2f), (%2.2f, %2.2f)\n", x1[i].real, x1[i].imag, x2[i].real, x2[i].imag, output[i].real, output[i].imag);
+    } */
 
     return 0;
 }
