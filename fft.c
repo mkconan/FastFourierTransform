@@ -3,6 +3,8 @@
 #include <time.h>
 
 #define PI 3.14159265358979323846264338327950288
+#define DATA_SIZE 16
+#define CALC_REPEAT_NUM 100
 
 // 複素数を表す構造体
 typedef struct {
@@ -146,19 +148,19 @@ int main() {
     // 入力データ（16個の要素）
     double input[] = {0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0};
     // double input[] = {1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1};
-    Complex output[16] = {0};
-    Complex x1[16];
-    for (int i = 0; i < 16; i++) {
+    Complex output[DATA_SIZE] = {0};
+    Complex x1[DATA_SIZE];
+    for (int i = 0; i < DATA_SIZE; i++) {
         x1[i].real = input[i];
         x1[i].imag = 0.0;
     }
-    Complex x2[16];
-    for (int i = 0; i < 16; i++) {
+    Complex x2[DATA_SIZE];
+    for (int i = 0; i < DATA_SIZE; i++) {
         x2[i].real = input[i];
         x2[i].imag = 0.0;
     }
-    Complex x3[16];
-    for (int i = 0; i < 16; i++) {
+    Complex x3[DATA_SIZE];
+    for (int i = 0; i < DATA_SIZE; i++) {
         x3[i].real = input[i];
         x3[i].imag = 0.0;
     }
@@ -167,9 +169,9 @@ int main() {
 
     // バタフライFFTの実行
     long int butterfly_fft_time = 0;
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < CALC_REPEAT_NUM; i++){
         start_time = clock();
-        fft_butterfly(x2, 16);
+        fft_butterfly(x2, DATA_SIZE);
         end_time = clock();
         butterfly_fft_time += (end_time - start_time);
     }
@@ -177,9 +179,9 @@ int main() {
 
     // FFTの実行
     long int fft_time = 0;
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < CALC_REPEAT_NUM; i++){
         start_time = clock();
-        fft(x1, 16);
+        fft(x1, DATA_SIZE);
         end_time = clock();
         fft_time += (end_time - start_time);
     }
@@ -187,19 +189,19 @@ int main() {
 
     // DFTの実行
     long int dft_time = 0;
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < CALC_REPEAT_NUM; i++){
         start_time = clock();
-        dft(x3, output, 16);
+        dft(x3, output, DATA_SIZE);
         end_time = clock();
         dft_time += (end_time - start_time);
     }
     printf("DFT time: %ld\n", dft_time);
 
     // 直流成分と交流成分の判定
-    // analyze_fft_result(x1, 16);
+    // analyze_fft_result(x1, DATA_SIZE);
 
     /* printf("FT Result:\n");
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < DATA_SIZE; i++) {
         printf("(%2.2f, %2.2f), (%2.2f, %2.2f), (%2.2f, %2.2f)\n", x1[i].real, x1[i].imag, x2[i].real, x2[i].imag, output[i].real, output[i].imag);
     } */
 
